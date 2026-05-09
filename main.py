@@ -68,3 +68,23 @@ async def create_listing(
 async def get_listings():
     docs = db.collection("listings").stream()
     return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+
+@app.post("/listings/{listing_id}/confirm-payment-sent")
+async def confirm_payment_sent(listing_id: str, sender_name: str = Form(...), amount: float = Form(...)):
+    db.collection("listings").document(listing_id).collection("confirmations").add({
+        "type": "payment_sent",
+        "sender_name": sender_name,
+        "amount": amount,
+        "timestamp": firestore.SERVER_TIMESTAMP
+    })
+    return {"status": "Payment sent confirmation recorded"}
+
+@app.post("/listings/{listing_id}/confirm-payment-received")
+async def confirm_payment_received(listing_id: str, receiver_name: str = Form(...), amount: float = Form(...)):
+    db.collection("listings").document(listing_id).collection("confirmations").add({
+        "type": "payment_received",
+        "receiver_name": receiver_name,
+        "amount": amount,
+        "timestamp": firestore.SERVER_TIMESTAMP
+    })
+    return {"status": "Payment received confirmation recorded"}
