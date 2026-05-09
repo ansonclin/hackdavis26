@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+python-multipart
+anthropic
+python-dotenv
+pypdf
+firebase-admin

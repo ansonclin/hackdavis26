@@ -3,3 +3,4 @@ venv/
 __pycache__/
 *.pyc
 firebase-credentials.json
+.DS_Store
