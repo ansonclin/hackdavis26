@@ -7,8 +7,10 @@ import io
 import firebase_admin
 from firebase_admin import credentials, firestore
 from pydantic import BaseModel
+import os
 
-cred = credentials.Certificate("firebase-credentials.json")
+cred_path = os.getenv("FIREBASE_CRED_PATH", "firebase-credentials.json")
+cred = credentials.Certificate(cred_path)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
@@ -59,15 +61,27 @@ async def create_listing(
         "start_date": start_date,
         "end_date": end_date,
         "venmo_handle": venmo_handle,
-        "lease_summary": lease_summary
+        "lease_summary": lease_summary,
+        "created_at": firestore.SERVER_TIMESTAMP,
     })
 
     return {"id": doc_ref[1].id, "lease_summary": lease_summary}
 
 @app.get("/listings")
 async def get_listings():
-    docs = db.collection("listings").stream()
-    return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+    docs = (
+        db.collection("listings")
+        .order_by("created_at", direction=firestore.Query.DESCENDING)
+        .stream()
+    )
+    results = []
+    for doc in docs:
+        data = doc.to_dict()
+        # Drop the server timestamp — frontend doesn't need it and it's not
+        # cleanly JSON-serializable.
+        data.pop("created_at", None)
+        results.append({"id": doc.id, **data})
+    return results
 
 @app.post("/listings/{listing_id}/confirm-payment-sent")
 async def confirm_payment_sent(listing_id: str, sender_name: str = Form(...), amount: float = Form(...)):
