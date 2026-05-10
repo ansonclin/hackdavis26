@@ -154,7 +154,6 @@ function Hero() {
             </div>
             <div className="flex items-center gap-6 pt-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-success" /> .ucdavis.edu verified</div>
-              <div className="flex items-center gap-2"><Lock className="w-4 h-4 text-success" /> Escrow protected</div>
             </div>
           </div>
 
@@ -326,9 +325,24 @@ function RealListingCard({ listing }: { listing: Listing }) {
             <span>{formatRange(listing.start_date, listing.end_date)}</span>
           </div>
           <div className="flex items-end justify-between pt-3 border-t border-border/60">
-            <div className="font-display text-2xl font-bold text-primary">
-              ${listing.rent.toLocaleString()}
-              <span className="text-sm font-normal text-muted-foreground">/mo</span>
+            <div>
+              {listing.incentive_amount > 0 ? (
+                <>
+                  <div className="text-xs text-muted-foreground line-through">${listing.rent.toLocaleString()}/mo</div>
+                  <div className="font-display text-2xl font-bold text-primary">
+                    ${(listing.rent - listing.incentive_amount).toLocaleString()}
+                    <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                  </div>
+                  <div className="text-xs text-accent-gold-foreground font-medium">
+                    Tenant covers ${listing.incentive_amount.toLocaleString()}/mo
+                  </div>
+                </>
+              ) : (
+                <div className="font-display text-2xl font-bold text-primary">
+                  ${listing.rent.toLocaleString()}
+                  <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                </div>
+              )}
             </div>
             <Button size="sm" variant="outline" className="rounded-full">View lease</Button>
           </div>
@@ -522,8 +536,7 @@ function Index() {
         <Hero />
         <HowItWorks />
         <Listings />
-        <AISummaryShowcase />
-        <Trust />
+<Trust />
         <CTA />
       </main>
       <Footer />

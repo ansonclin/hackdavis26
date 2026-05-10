@@ -8,6 +8,9 @@ export type Listing = {
   start_date: string;
   end_date: string;
   venmo_handle: string;
+  incentive_amount: number;
+  payment_method: "cash" | "solana";
+  escrow_wallet?: string;
   lease_summary: string;
 };
 
