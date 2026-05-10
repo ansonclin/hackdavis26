@@ -1,3 +1,7 @@
+from solana.rpc.api import Client
+from solders.keypair import Keypair
+import json
+import os
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -14,11 +18,15 @@ db = firestore.client()
 
 load_dotenv()
 
+solana_client = Client("https://api.devnet.solana.com")
+escrow_keypair = Keypair.from_bytes(bytes(json.loads(os.getenv("SOLANA_ESCROW_PRIVATE_KEY"))))
+
+
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -88,3 +96,23 @@ async def confirm_payment_received(listing_id: str, receiver_name: str = Form(..
         "timestamp": firestore.SERVER_TIMESTAMP
     })
     return {"status": "Payment received confirmation recorded"}
+
+@app.post("/listings/{listing_id}/lock-incentive")
+async def lock_incentive(listing_id: str, amount_sol: float = Form(...), tenant_name: str = Form(...)):
+    balance = solana_client.get_balance(escrow_keypair.pubkey())
+    lamports = balance.value
+    
+    db.collection("listings").document(listing_id).update({
+        "incentive_amount": amount_sol,
+        "incentive_status": "locked",
+        "escrow_wallet": str(escrow_keypair.pubkey()),
+        "tenant_name": tenant_name
+    })
+
+    return {
+        "status": "Incentive locked",
+        "escrow_wallet": str(escrow_keypair.pubkey()),
+        "amount_sol": amount_sol,
+        "escrow_balance_lamports": lamports,
+        "solana_explorer": f"https://explorer.solana.com/address/{escrow_keypair.pubkey()}?cluster=devnet"
+    }
